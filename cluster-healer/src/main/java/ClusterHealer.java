@@ -25,6 +25,8 @@ public class ClusterHealer implements Watcher {
     // The number of worker instances we need to maintain at all times
     private int numberOfWorkers;
 
+
+
     // Class Constructor
     public ClusterHealer(int numberOfWorkers, String pathToProgram) {
         this.numberOfWorkers = numberOfWorkers;
@@ -50,10 +52,19 @@ public class ClusterHealer implements Watcher {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' created!!");
         }
 
+        List<String> children = zooKeeper.getChildren(ELECTION_NAMESPACE, true);
+        System.out.println("There are currently: " + children.size() + " nodes");
+
         if (nodeExists != null) {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' already exists in zookeeper");
+
+            if(children.size() == 0){
+                startWorker();
+            }
+
         }
-        checkRunningWorkers();
+        System.out.println("There are currently: " + children.size() + " nodes");
+
 
 
     }
@@ -92,6 +103,7 @@ public class ClusterHealer implements Watcher {
     @Override
     public void process(WatchedEvent event) {
         switch (event.getType()) {
+
             case None:
                 if (event.getState() == Event.KeeperState.SyncConnected) {
                     System.out.println("Successfully connected to Zookeeper");
@@ -103,15 +115,12 @@ public class ClusterHealer implements Watcher {
                 }
                 break;
 
-            //           case NodeDeleted:
-            //              try {
-            //                   System.out.println("Received Node deletion");
-            //                   checkRunningWorkers();
-            //               } catch (KeeperException e) {
-            //                   e.printStackTrace();
-            //               } catch (InterruptedException e) {
-            //                   e.printStackTrace();
-            //               }
+            case NodeDeleted:
+                try {
+                    startWorker();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
         }
     }
 
@@ -119,7 +128,15 @@ public class ClusterHealer implements Watcher {
      * Checks how many workers are currently running.
      * If less than the required number, then start a new worker.
      */
-    public void checkRunningWorkers() {
+    public void checkRunningWorkers(){
+
+        // check if there are any workers running.
+
+        // check how many are currently running.
+
+        // check if the passed in value of workers is present, if not start a new worker.
+
+
 
     }
 
