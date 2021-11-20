@@ -3,7 +3,6 @@ import org.apache.zookeeper.data.Stat;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 public class ClusterHealer implements Watcher {
@@ -25,6 +24,7 @@ public class ClusterHealer implements Watcher {
     // The number of worker instances we need to maintain at all times
     private int numberOfWorkers;
 
+    // Variable for assigning the size of the worker znode
     private List<String> children;
 
 
@@ -40,6 +40,7 @@ public class ClusterHealer implements Watcher {
      */
     public void initialiseCluster() throws InterruptedException, KeeperException, IOException {
 
+        // .exists() method which returns null or a Stat
         Stat nodeExists = zooKeeper.exists(ELECTION_NAMESPACE, this);
         System.out.println("Checking if znode: '" + ELECTION_NAMESPACE + "' exists in zookeeper");
         System.out.println();
@@ -48,21 +49,19 @@ public class ClusterHealer implements Watcher {
         if (nodeExists == null) {
             System.out.println("Parent znode: '" + ELECTION_NAMESPACE + "' does not exist, creating one now");
 
+            // Creating the new parent znode
             String znodeFullPath = zooKeeper.create(ELECTION_NAMESPACE, new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             this.currentZnodeName = znodeFullPath.replace(ELECTION_NAMESPACE + "/", "");
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' created!!");
         }
 
-
+        // If it does exist, print the number of workers and prompt the user the parent znode exists
         if (nodeExists != null) {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' already exists in zookeeper");
-
             System.out.println("There are currently " + children.size() + " workers");
-            checkRunningWorkers();
-
         }
-
-
+        // Initial check for running workers
+        checkRunningWorkers();
     }
 
 
@@ -98,6 +97,7 @@ public class ClusterHealer implements Watcher {
 
     @Override
     public void process(WatchedEvent event) {
+        // initalising children variable with znode namespace children
         try {
             children = zooKeeper.getChildren(ELECTION_NAMESPACE, true);
         } catch (KeeperException e) {
@@ -105,8 +105,10 @@ public class ClusterHealer implements Watcher {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        // Switch statement for managing events
         switch (event.getType()) {
 
+            // Prompt user they have connected or disconnected to zookeeper
             case None:
                 if (event.getState() == Event.KeeperState.SyncConnected) {
                     System.out.println("Successfully connected to Zookeeper");
@@ -118,10 +120,11 @@ public class ClusterHealer implements Watcher {
                 }
                 break;
 
+            // Check the workers if any nodes have been changed
             case NodeChildrenChanged:
                 System.out.println("There are currently " + children.size() + " workers");
                 checkRunningWorkers();
-
+                break;
         }
     }
 
@@ -130,27 +133,16 @@ public class ClusterHealer implements Watcher {
      * If less than the required number, then start a new worker.
      */
     public void checkRunningWorkers() {
+
         try {
-
             if (children.size() < numberOfWorkers) {
-
                 startWorker();
-
             } else {
                 return;
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        // check if there are any workers running.
-
-        // check how many are currently running.
-
-        // check if the passed in value of workers is present, if not start a new worker.
-
-
     }
 
     /**
