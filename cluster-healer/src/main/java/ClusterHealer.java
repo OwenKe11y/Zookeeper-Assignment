@@ -110,7 +110,7 @@ public class ClusterHealer implements Watcher {
                 }
                 break;
 
-            // Check the workers if any nodes have been changed
+            // Shows user the number of workers currently
             case NodeChildrenChanged:
                 try {
                     System.out.println("There are currently " + zooKeeper.getChildren(ELECTION_NAMESPACE, true).size() + " workers");
@@ -119,8 +119,9 @@ public class ClusterHealer implements Watcher {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            // Check running workers if a node has been deleted
+            case NodeDeleted:
                 checkRunningWorkers();
-                break;
         }
     }
 
