@@ -25,6 +25,7 @@ public class ClusterHealer implements Watcher {
     // The number of worker instances we need to maintain at all times
     private int numberOfWorkers;
 
+    private List<String> children;
 
 
     // Class Constructor
@@ -52,19 +53,14 @@ public class ClusterHealer implements Watcher {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' created!!");
         }
 
-        List<String> children = zooKeeper.getChildren(ELECTION_NAMESPACE, true);
-        System.out.println("There are currently: " + children.size() + " nodes");
 
         if (nodeExists != null) {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' already exists in zookeeper");
 
-            if(children.size() == 0){
-                startWorker();
-            }
+            System.out.println("There are currently " + children.size() + " workers");
+            checkRunningWorkers();
 
         }
-        System.out.println("There are currently: " + children.size() + " nodes");
-
 
 
     }
@@ -102,6 +98,13 @@ public class ClusterHealer implements Watcher {
 
     @Override
     public void process(WatchedEvent event) {
+        try {
+            children = zooKeeper.getChildren(ELECTION_NAMESPACE, true);
+        } catch (KeeperException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         switch (event.getType()) {
 
             case None:
@@ -115,12 +118,10 @@ public class ClusterHealer implements Watcher {
                 }
                 break;
 
-            case NodeDeleted:
-                try {
-                    startWorker();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            case NodeChildrenChanged:
+                System.out.println("There are currently " + children.size() + " workers");
+                checkRunningWorkers();
+
         }
     }
 
@@ -128,14 +129,26 @@ public class ClusterHealer implements Watcher {
      * Checks how many workers are currently running.
      * If less than the required number, then start a new worker.
      */
-    public void checkRunningWorkers(){
+    public void checkRunningWorkers() {
+        try {
+
+            if (children.size() < numberOfWorkers) {
+
+                startWorker();
+
+            } else {
+                return;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
         // check if there are any workers running.
 
         // check how many are currently running.
 
         // check if the passed in value of workers is present, if not start a new worker.
-
 
 
     }
