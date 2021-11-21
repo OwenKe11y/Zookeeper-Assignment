@@ -54,7 +54,6 @@ public class ClusterHealer implements Watcher {
         // If it does exist, print the number of workers and prompt the user the parent znode exists
         if (nodeExists != null) {
             System.out.println("znode: '" + ELECTION_NAMESPACE + "' already exists in zookeeper");
-            System.out.println("There are currently " + zooKeeper.getChildren(ELECTION_NAMESPACE, true).size() + " workers");
 
         }
         // Initial check for running workers
@@ -112,16 +111,8 @@ public class ClusterHealer implements Watcher {
 
             // Shows user the number of workers currently
             case NodeChildrenChanged:
-                try {
-                    System.out.println("There are currently " + zooKeeper.getChildren(ELECTION_NAMESPACE, true).size() + " workers");
-                } catch (KeeperException e) {
-                    e.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            // Check running workers if a node has been deleted
-            case NodeDeleted:
                 checkRunningWorkers();
+                break;
         }
     }
 
@@ -132,10 +123,9 @@ public class ClusterHealer implements Watcher {
     public void checkRunningWorkers() {
 
         try {
+            System.out.println("There are currently " + zooKeeper.getChildren(ELECTION_NAMESPACE, true).size() + " workers");
             if (zooKeeper.getChildren(ELECTION_NAMESPACE, true).size() < numberOfWorkers) {
                 startWorker();
-            } else {
-                return;
             }
         } catch (IOException e) {
             e.printStackTrace();
